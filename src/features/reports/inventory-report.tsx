@@ -10,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useCategories } from "@/hooks/queries/use-categories";
 import { useVendors } from "@/hooks/queries/use-vendors";
+import { usePermissions } from "@/hooks/use-permissions";
+import { PERMISSIONS } from "@/constants/permissions";
 import { useInventoryReport } from "@/hooks/queries/use-reports";
 import { reportsService, type InventoryReportParams } from "@/services/reports.service";
 import { lineValue, percent } from "@/lib/calc";
@@ -19,8 +21,10 @@ import { DownloadButton, ReportToolbar, SummaryTile } from "./report-shell";
 export function InventoryReportView() {
   const [params, setParams] = React.useState<InventoryReportParams>({ status: "ACTIVE" });
   const { data, isLoading, isError, error, refetch } = useInventoryReport(params);
-  const { data: categories } = useCategories();
-  const { data: vendors } = useVendors();
+  // Filter dropdowns are a convenience; skip them when the lists aren't readable.
+  const { has } = usePermissions();
+  const { data: categories } = useCategories(undefined, { enabled: has(PERMISSIONS.CATEGORY_VIEW) });
+  const { data: vendors } = useVendors(undefined, { enabled: has(PERMISSIONS.VENDOR_VIEW) });
 
   const summary = data?.summary;
 

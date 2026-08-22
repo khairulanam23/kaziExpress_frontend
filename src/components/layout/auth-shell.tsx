@@ -20,7 +20,7 @@ export function AuthShell({
             <span className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
               <LayoutDashboard className="size-4.5" />
             </span>
-            <span className="text-lg font-semibold tracking-tight">Inventory Management</span>
+            <span className="text-lg font-semibold tracking-tight">Kazi Express</span>
           </div>
           <p className="text-primary mb-2 text-xs font-semibold tracking-widest uppercase">{eyebrow}</p>
           <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{title}</h1>

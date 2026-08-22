@@ -1,16 +1,18 @@
 "use client";
 
+import * as React from "react";
+
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { LayoutDashboard, LogOut, ChevronsLeft, ChevronsRight, Sparkles } from "lucide-react";
-import { navGroupsForRole, NAV_FOOTER_ITEMS } from "@/constants/nav";
+import { navGroupsFor, NAV_FOOTER_ITEMS } from "@/constants/nav";
 import { ICON_MAP } from "@/constants/icon-map";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/store/ui-store";
 import { useLogout } from "@/hooks/queries/use-auth";
-import { useAuthStore } from "@/store/auth-store";
 import { useUnreadNotificationCount } from "@/hooks/queries/use-notifications";
+import { usePermissions } from "@/hooks/use-permissions";
 import {
   Tooltip,
   TooltipTrigger,
@@ -109,11 +111,12 @@ export function SidebarContent({
     logoutMutation.mutate(undefined, { onSettled: () => router.replace("/login") });
   };
 
-  const user = useAuthStore((s) => s.user);
   const { data: unreadCount } = useUnreadNotificationCount();
+  const { isAdmin, has, hasAny } = usePermissions();
 
-  // Employees only ever see destinations their role is authorized for.
-  const filteredGroups = navGroupsForRole(user?.role);
+  // Destinations are filtered by the permissions the server actually granted,
+  // so a permission-holding employee sees the sections they can genuinely use.
+  const filteredGroups = React.useMemo(() => navGroupsFor({ isAdmin, has, hasAny }), [isAdmin, has, hasAny]);
 
   return (
     <div className="flex h-full flex-col">
@@ -124,7 +127,7 @@ export function SidebarContent({
         </span>
         {!collapsed && (
           <div>
-            <span className="text-base font-bold tracking-tight text-foreground">Inventory Management</span>
+            <span className="text-base font-bold tracking-tight text-foreground">Kazi Express</span>
             <p className="text-[10px] text-muted-foreground -mt-0.5">Inventory System</p>
           </div>
         )}

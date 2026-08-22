@@ -4,6 +4,8 @@ import * as React from "react";
 import { toast } from "sonner";
 
 import { SectionHeader } from "@/components/shared/chart-card";
+import { PermissionGate } from "@/components/shared/permission-gate";
+import { PERMISSIONS } from "@/constants/permissions";
 import { Card } from "@/components/ui/card";
 import { Pagination } from "@/components/shared/pagination";
 import { ConfirmDialog } from "@/components/shared/states";
@@ -73,9 +75,15 @@ export default function InventoryPage() {
         description="Track, add, and update compound products in your inventory."
         action={
           <div className="flex flex-wrap gap-2">
-            <AdjustStockDialog />
-            <AddStockDialog />
-            <ProductFormDialog defaultIsComposite={true} />
+            <PermissionGate permission={PERMISSIONS.INVENTORY_MANAGE_STOCK}>
+              <AdjustStockDialog />
+            </PermissionGate>
+            <PermissionGate permission={PERMISSIONS.INVENTORY_CREATE}>
+              <AddStockDialog />
+            </PermissionGate>
+            <PermissionGate permission={PERMISSIONS.PRODUCT_CREATE}>
+              <ProductFormDialog defaultIsComposite={true} />
+            </PermissionGate>
           </div>
         }
       />

@@ -11,21 +11,23 @@ import {
   CheckCircle2,
   Clock,
   Factory,
-  PackageX,
   Users,
   Wallet,
 } from "lucide-react";
 import { ChartCard, SectionHeader } from "@/components/shared/chart-card";
 import { StatCard } from "@/components/shared/stat-card";
 import { CardGridSkeleton, EmptyState, ErrorState } from "@/components/shared/states";
-import { MovementTypeBadge } from "@/components/shared/status-badges";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DateRangePicker, currentMonthRange, type DateRange } from "@/components/shared/period-picker";
 import { useAdminDashboard } from "@/hooks/queries/use-dashboard";
-import { num, percent } from "@/lib/calc";
+import { useProductRequests } from "@/hooks/queries/use-product-requests";
+import { ActivityTimeline } from "./activity-timeline";
+import { AlertsPanel } from "./alerts-panel";
+import { percent } from "@/lib/calc";
 import { formatCurrency, formatNumber, formatPercent, formatQuantity, formatRelativeTime } from "@/lib/utils";
 
 const ProductionMixChart = dynamic(() => import("./dashboard-charts").then((m) => m.ProductionMixChart), {
@@ -46,6 +48,9 @@ export function AdminDashboard({ userName }: { userName?: string | null }) {
   const validRange = range.from <= range.to ? range : undefined;
 
   const { data, isLoading, isError, error, refetch } = useAdminDashboard(validRange);
+  // Pending requests aren't part of the dashboard payload but are a decision
+  // waiting on an admin, so they belong in the alerts strip.
+  const { data: pendingRequests } = useProductRequests({ status: "PENDING", showPerPage: 1 });
 
   if (isError) {
     return (
@@ -72,6 +77,8 @@ export function AdminDashboard({ userName }: { userName?: string | null }) {
         description="Live view of inventory, production, attendance and payroll."
         action={<DateRangePicker value={range} onChange={setRange} />}
       />
+
+      <AlertsPanel data={data} pendingRequests={pendingRequests?.totalData} />
 
       {isLoading && !data ? (
         <CardGridSkeleton count={8} />
@@ -144,43 +151,9 @@ export function AdminDashboard({ userName }: { userName?: string | null }) {
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
         <PayrollProgressChart payroll={payroll} isLoading={isLoading} />
 
-        <ChartCard
-          title="Recent stock movements"
-          description="Latest changes across every item"
-          className="xl:col-span-2"
-          action={
-            <Button variant="ghost" size="sm" asChild>
-              <Link href="/dashboard/stock-movements">
-                View all <ArrowRight className="size-3.5" />
-              </Link>
-            </Button>
-          }
-        >
-          {isLoading && !data ? (
-            <div className="flex flex-col gap-2">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <Skeleton key={i} className="h-12 w-full rounded-lg" />
-              ))}
-            </div>
-          ) : !inventory?.recentStockMovements?.length ? (
-            <EmptyState icon={PackageX} title="No stock movements yet" description="Recorded purchases, production and adjustments will appear here." />
-          ) : (
-            <div className="flex flex-col gap-2">
-              {inventory.recentStockMovements.map((m) => (
-                <div key={m.id} className="border-border/60 flex items-center gap-3 rounded-xl border px-3 py-2.5">
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{m.product?.name ?? "Unknown item"}</p>
-                    <p className="text-muted-foreground text-xs">
-                      {m.performedBy?.name ?? "System"} · {formatRelativeTime(m.createdAt)}
-                    </p>
-                  </div>
-                  <span className="tabular text-sm font-semibold">{formatQuantity(Math.abs(num(m.quantity)))}</span>
-                  <MovementTypeBadge type={m.type} />
-                </div>
-              ))}
-            </div>
-          )}
-        </ChartCard>
+        <div className="xl:col-span-2">
+          <ActivityTimeline movements={inventory?.recentStockMovements} isLoading={isLoading} />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">

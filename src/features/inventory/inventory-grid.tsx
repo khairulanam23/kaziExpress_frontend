@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
 import { ProductThumb } from "@/components/shared/initials-avatar";
-import { ProductStockBadge } from "@/components/shared/status-badges";
+import { StockIndicator } from "@/components/shared/stock-indicator";
 import { ProductRowActions } from "./product-row-actions";
 import { EmptyState } from "@/components/shared/states";
 import { formatCurrency } from "@/lib/utils";
@@ -34,8 +34,7 @@ export function InventoryGrid({
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {products.map((p, i) => {
-        const category = (p.customFields?.category as string) ?? "Uncategorized";
-        const threshold = p.lowStockThreshold ? Number(p.lowStockThreshold) : null;
+        const category = p.category?.name ?? "Uncategorised";
         return (
           <motion.div
             key={p.id}
@@ -66,11 +65,19 @@ export function InventoryGrid({
                   {p.sku ?? "No SKU"} · {category}
                 </p>
               </div>
-              <div className="flex items-center justify-between px-5">
-                <span className="tabular font-semibold">{formatCurrency(Number(p.unitPrice))}</span>
-                <ProductStockBadge currentStock={Number(p.currentStock)} lowStockThreshold={threshold} />
+              {/* Stock reads as a bar first, a number second. */}
+              <div className="px-5">
+                <StockIndicator
+                  currentStock={p.currentStock}
+                  lowStockThreshold={p.lowStockThreshold}
+                  unit={p.unit}
+                />
               </div>
-              <div className="text-muted-foreground px-5 text-xs">{p.currentStock} units in stock</div>
+
+              <div className="flex items-center justify-between border-t border-border/60 px-5 pt-3">
+                <span className="tabular font-semibold">{formatCurrency(p.unitPrice)}</span>
+                <span className="text-muted-foreground text-xs">{p.vendor?.name ?? "No vendor"}</span>
+              </div>
             </Card>
           </motion.div>
         );

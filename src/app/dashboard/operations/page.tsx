@@ -1,8 +1,11 @@
 "use client";
 
 import * as React from "react";
-import { Search, X } from "lucide-react";
+import Link from "next/link";
+import { LayoutGrid, Search, X } from "lucide-react";
 import { SectionHeader } from "@/components/shared/chart-card";
+import { PermissionGate } from "@/components/shared/permission-gate";
+import { PERMISSIONS } from "@/constants/permissions";
 import { Pagination } from "@/components/shared/pagination";
 import { ErrorState, TableSkeleton } from "@/components/shared/states";
 import { Button } from "@/components/ui/button";
@@ -67,7 +70,19 @@ export default function OperationsPage() {
             ? "Create tasks, allocate material batches and track output through to finished stock."
             : "Accept your assigned tasks, report production and flag problems."
         }
-        action={isAdmin ? <CreateTaskDialog /> : undefined}
+        action={
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/dashboard/shopfloor">
+                <LayoutGrid className="size-4" />
+                Board view
+              </Link>
+            </Button>
+            <PermissionGate permission={PERMISSIONS.PRODUCTION_CREATE_TASK}>
+              <CreateTaskDialog />
+            </PermissionGate>
+          </div>
+        }
       />
 
       <TaskStatusCards counts={counts} active={statusFilter} onSelect={handleStatusChange} />

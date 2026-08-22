@@ -29,19 +29,20 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Skeleton } from "@/components/ui/skeleton";
+
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EmptyState } from "@/components/shared/states";
 import { ProductThumb } from "@/components/shared/initials-avatar";
 import { ItemTypeBadge, MovementTypeBadge, ProductStockBadge } from "@/components/shared/status-badges";
-import { useProduct, useProductBOMCost } from "@/hooks/queries/use-products";
+import { useProduct, useProductBOM, useProductBOMCost } from "@/hooks/queries/use-products";
 import { useAssembleProduct, useBatches, useProductMovements } from "@/hooks/queries/use-inventory";
 import { getApiErrorMessage } from "@/lib/api-client";
 import { batchAvailable, lineValue, movementDirection, num, round, signedMovementQuantity } from "@/lib/calc";
 import { cn, formatDate, formatDateTime, formatMoney, formatQuantity } from "@/lib/utils";
 import { AddStockDialog, AdjustStockDialog } from "./stock-dialogs";
 import { BOMEditorDialog } from "./bom-editor-dialog";
+import { BOMTree } from "./bom-tree";
 import { CustomFieldsDialog } from "./custom-fields-dialog";
 import type { Product } from "@/types";
 
@@ -188,8 +189,13 @@ export function ProductDetailsDrawer({
   const [fieldsOpen, setFieldsOpen] = React.useState(false);
 
   const productId = open && product ? product.id : null;
-  const { data: fullProduct, isLoading } = useProduct(productId);
+  const { data: fullProduct } = useProduct(productId);
   const { data: bomCost } = useProductBOMCost(productId, { enabled: !!product?.isComposite });
+  const { data: bomTree, isLoading: bomLoading } = useProductBOM(productId);
+
+  // Quantity the BOM tree is planned against.
+  const [planQuantity, setPlanQuantity] = React.useState("1");
+  const planQty = Number(planQuantity);
   const { data: batches = [] } = useBatches(productId ?? undefined, { enabled: !!productId });
   const { data: movements = [] } = useProductMovements(productId);
 
@@ -365,58 +371,39 @@ export function ProductDetailsDrawer({
 
               {/* ── BOM ── */}
               <TabsContent value="bom" className="mt-4">
-                {isLoading ? (
-                  <Skeleton className="h-40 w-full rounded-xl" />
-                ) : !bomCost?.breakdown?.length ? (
-                  <EmptyState
-                    icon={Workflow}
-                    title="No bill of materials"
-                    description="Add the components this item is built from."
-                    action={
-                      <Button size="sm" onClick={() => setBomOpen(true)}>
-                        <Workflow className="size-4" />
-                        Configure BOM
-                      </Button>
-                    }
-                  />
-                ) : (
-                  <div className="flex flex-col gap-3">
-                    <div className="overflow-x-auto rounded-xl border border-border">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Component</TableHead>
-                            <TableHead className="text-right">Per unit</TableHead>
-                            <TableHead className="text-right">Unit price</TableHead>
-                            <TableHead className="text-right">Line cost</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {bomCost.breakdown.map((line) => (
-                            <TableRow key={line.itemId}>
-                              <TableCell>
-                                <p className="text-sm font-medium">{line.itemName}</p>
-                                <p className="text-muted-foreground text-xs">{line.sku ?? "No SKU"}</p>
-                              </TableCell>
-                              <TableCell className="tabular text-right text-sm">
-                                {formatQuantity(line.quantity, line.unit)}
-                              </TableCell>
-                              <TableCell className="tabular text-right text-sm">{formatMoney(line.unitPrice)}</TableCell>
-                              <TableCell className="tabular text-right text-sm font-medium">
-                                {formatMoney(line.total)}
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
+                <div className="flex flex-col gap-4">
+                  {/* Plan the tree for a chosen batch size, so shortages are
+                      answered for the quantity actually being built. */}
+                  <div className="bg-muted/40 flex flex-wrap items-center gap-3 rounded-xl p-3">
+                    <Label htmlFor="bom-qty" className="text-xs">
+                      Plan for
+                    </Label>
+                    <Input
+                      id="bom-qty"
+                      type="number"
+                      min={1}
+                      step="any"
+                      value={planQuantity}
+                      onChange={(e) => setPlanQuantity(e.target.value)}
+                      className="h-8 w-24"
+                    />
+                    <span className="text-muted-foreground text-xs">{item.unit ?? "units"}</span>
+                  </div>
 
+                  <BOMTree
+                    bom={bomTree}
+                    quantity={planQty > 0 ? planQty : 1}
+                    isLoading={bomLoading}
+                    onConfigure={() => setBomOpen(true)}
+                  />
+
+                  {!!bomCost?.breakdown?.length && (
                     <div className="bg-muted/40 flex items-center justify-between rounded-xl p-3 text-sm">
-                      <span className="text-muted-foreground">Suggested cost per unit</span>
+                      <span className="text-muted-foreground">Suggested material cost per unit</span>
                       <span className="tabular font-semibold">{formatMoney(bomCost.suggestedCost)}</span>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </TabsContent>
 
               {/* ── Batches ── */}

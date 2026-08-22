@@ -5,11 +5,12 @@ import { categoriesService, type CategoryListParams } from "@/services/categorie
 
 const CATEGORIES_KEY = ["categories"] as const;
 
-export function useCategories(params?: CategoryListParams) {
+export function useCategories(params?: CategoryListParams, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: [...CATEGORIES_KEY, params ?? {}],
     queryFn: () => categoriesService.list(params ?? { showPerPage: 100 }),
     placeholderData: (prev) => prev,
+    ...options,
   });
 }
 

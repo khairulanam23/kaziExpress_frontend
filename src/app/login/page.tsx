@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { AuthShell } from "@/components/layout/auth-shell";
 import { LoginForm } from "@/features/auth/login-form";
 
-export const metadata: Metadata = { title: "Sign in — Inventory Management" };
+export const metadata: Metadata = { title: "Sign in — Kazi Express" };
 
 export default function LoginPage() {
   return (

@@ -86,6 +86,12 @@ export interface User {
 
   employeeProfile?: EmployeeProfile | null;
   estimatedEarnings?: EarningsBreakdown | null;
+
+  /**
+   * Effective permission keys, resolved server-side from the role's defaults
+   * plus any explicit grants. Returned by `/auth/login` and `/auth/me`.
+   */
+  permissions?: string[];
 }
 
 /** GET /users/me/earnings */
@@ -321,7 +327,7 @@ export interface Task {
   description: string | null;
   status: TaskStatus;
   productId: string | null;
-  product?: { id: string; name: string; sku: string | null; unit?: string; itemType?: ItemType; unitPrice?: Decimalish } | null;
+  product?: { id: string; name: string; sku: string | null; unit?: string; itemType?: ItemType; unitPrice?: Decimalish; imageUrl?: string | null } | null;
   productionQuantity: Decimalish;
   completedQuantity: Decimalish;
   remainingQuantity: Decimalish;
@@ -738,6 +744,11 @@ export interface NavItem {
   href: string;
   icon: string;
   badge?: number;
+  /** Permission the destination's primary endpoint requires. */
+  permission?: string;
+  /** Destination is reachable if the user holds any one of these. */
+  anyOf?: readonly string[];
+  /** Reserved for the few screens that are genuinely role-gated server-side. */
   adminOnly?: boolean;
 }
 
@@ -824,4 +835,49 @@ export interface OrganizationProfile {
   logoUrl: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+// ---------------------------------------------------------------------------
+// Permissions
+// ---------------------------------------------------------------------------
+export interface Permission {
+  id: string;
+  key: string;
+  name: string;
+  description: string | null;
+  category: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** GET /permissions */
+export interface PermissionCatalog {
+  permissions: Permission[];
+  /** Category code -> display label. */
+  categories: Record<string, string>;
+  /** Display label -> permissions in that category. */
+  grouped: Record<string, Permission[]>;
+  /** Preset name -> permission keys. */
+  presets: Record<string, string[]>;
+  defaultEmployeePermissions: string[];
+}
+
+export interface PermissionAuditEntry {
+  id: string;
+  action: string;
+  permissionKey: string | null;
+  performedBy?: UserRef | null;
+  createdAt: string;
+  details?: string | null;
+}
+
+/** GET /permissions/employees/:id */
+export interface EmployeePermissions {
+  user: { id: string; name: string | null; email: string; role: Role; isActive: boolean };
+  /** Baseline every employee holds, not individually revocable. */
+  defaultPermissions: string[];
+  assignedPermissions: Permission[];
+  explicitPermissionKeys: string[];
+  effectivePermissions: string[];
+  auditLogs: PermissionAuditEntry[];
 }

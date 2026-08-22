@@ -3,6 +3,8 @@
 import * as React from "react";
 import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, Search } from "lucide-react";
 import { SectionHeader } from "@/components/shared/chart-card";
+import { PermissionGate } from "@/components/shared/permission-gate";
+import { PERMISSIONS } from "@/constants/permissions";
 import { StatCard } from "@/components/shared/stat-card";
 import { CardGridSkeleton, EmptyState, ErrorState, TableSkeleton } from "@/components/shared/states";
 import { MovementTypeBadge } from "@/components/shared/status-badges";
@@ -84,8 +86,12 @@ export default function StockMovementsPage() {
         description="Every change to inventory — purchases, production, adjustments, damage and reservations."
         action={
           <div className="flex gap-2">
-            <AdjustStockDialog />
-            <AddStockDialog />
+            <PermissionGate permission={PERMISSIONS.INVENTORY_MANAGE_STOCK}>
+              <AdjustStockDialog />
+            </PermissionGate>
+            <PermissionGate permission={PERMISSIONS.INVENTORY_CREATE}>
+              <AddStockDialog />
+            </PermissionGate>
           </div>
         }
       />

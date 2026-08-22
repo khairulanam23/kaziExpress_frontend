@@ -5,11 +5,12 @@ import { vendorsService, type VendorListParams, type VendorPayload } from "@/ser
 
 const VENDORS_KEY = ["vendors"] as const;
 
-export function useVendors(params?: VendorListParams) {
+export function useVendors(params?: VendorListParams, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: [...VENDORS_KEY, params ?? {}],
     queryFn: () => vendorsService.list(params ?? { showPerPage: 100 }),
     placeholderData: (prev) => prev,
+    ...options,
   });
 }
 

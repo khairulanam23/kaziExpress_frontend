@@ -6,18 +6,29 @@ import { usePathname, useRouter } from "next/navigation";
 import { AuthGuard } from "@/components/layout/auth-guard";
 import { DesktopSidebar, MobileSidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
-import { isAdminOnlyRoute } from "@/constants/nav";
-import { useAuthStore } from "@/store/auth-store";
+import { routeRuleFor } from "@/constants/nav";
+import { usePermissions } from "@/hooks/use-permissions";
+import { LoadingState } from "@/components/shared/states";
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
-  const user = useAuthStore((s) => s.user);
   const pathname = usePathname();
   const router = useRouter();
+  const { isAdmin, has, hasAny, isAuthenticated } = usePermissions();
 
-  const forbidden = !!user && user.role !== "ADMIN" && isAdminOnlyRoute(pathname);
+  const rule = routeRuleFor(pathname);
 
-  // Client-side redirect is a UX nicety; the API rejects these calls with 403
-  // for non-admins regardless of how the route was reached.
+  const allowed =
+    !rule ||
+    ((!rule.adminOnly || isAdmin) &&
+      (!rule.anyOf || hasAny(rule.anyOf)) &&
+      has(rule.permission));
+
+  // Until the session is known, the verdict is unknowable — render neither the
+  // page nor a redirect. Mounting the page first would fire its queries and
+  // produce a burst of 403s the user never sees the result of.
+  const verdictReady = isAuthenticated;
+  const forbidden = verdictReady && !allowed;
+
   React.useEffect(() => {
     if (forbidden) router.replace("/dashboard");
   }, [forbidden, router]);
@@ -29,7 +40,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         <MobileSidebar />
         <div className="flex min-h-screen w-full min-w-0 flex-1 flex-col">
           <Topbar />
-          <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">{forbidden ? null : children}</main>
+          <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">
+            {!verdictReady ? <LoadingState label="Loading…" /> : forbidden ? null : children}
+          </main>
         </div>
       </div>
     </AuthGuard>

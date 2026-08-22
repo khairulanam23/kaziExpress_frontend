@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Tag } from "lucide-react";
 import { CategoriesTable } from "@/features/categories/categories-table";
 
-export const metadata: Metadata = { title: "Categories — Inventory Management" };
+export const metadata: Metadata = { title: "Categories — Kazi Express" };
 
 export default function CategoriesPage() {
   return (

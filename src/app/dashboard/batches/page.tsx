@@ -3,6 +3,8 @@
 import * as React from "react";
 import { Layers, Lock, Search } from "lucide-react";
 import { SectionHeader } from "@/components/shared/chart-card";
+import { PermissionGate } from "@/components/shared/permission-gate";
+import { PERMISSIONS } from "@/constants/permissions";
 import { StatCard } from "@/components/shared/stat-card";
 import { CardGridSkeleton, EmptyState, ErrorState, TableSkeleton } from "@/components/shared/states";
 import { Pagination } from "@/components/shared/pagination";
@@ -70,8 +72,12 @@ export default function BatchesPage() {
         description="Every batch of stock, what's reserved for production, and what's still free to allocate."
         action={
           <div className="flex gap-2">
-            <AdjustStockDialog />
-            <AddStockDialog />
+            <PermissionGate permission={PERMISSIONS.INVENTORY_MANAGE_STOCK}>
+              <AdjustStockDialog />
+            </PermissionGate>
+            <PermissionGate permission={PERMISSIONS.INVENTORY_CREATE}>
+              <AddStockDialog />
+            </PermissionGate>
           </div>
         }
       />

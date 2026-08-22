@@ -23,6 +23,8 @@ import {
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { useCreateProduct, useUpdateProduct,  useProduct, useProducts} from "@/hooks/queries/use-products";
 import { useVendors } from "@/hooks/queries/use-vendors";
+import { usePermissions } from "@/hooks/use-permissions";
+import { PERMISSIONS } from "@/constants/permissions";
 import { useCategories } from "@/hooks/queries/use-categories";
 import { getApiErrorMessage } from "@/lib/api-client";
 import { formatCurrency, cn } from "@/lib/utils";
@@ -75,8 +77,11 @@ export function ProductFormDialog({
   const [imagePreview, setImagePreview] = React.useState<string | null>(null);
   const [shouldRemoveImage, setShouldRemoveImage] = React.useState(false);
 
-  const { data: vendorData } = useVendors();
-  const { data: categoriesData } = useCategories();
+  // Vendor and category pickers are optional context: fetch them only when the
+  // user can read those lists, otherwise the dialog fires guaranteed 403s.
+  const { has } = usePermissions();
+  const { data: vendorData } = useVendors(undefined, { enabled: has(PERMISSIONS.VENDOR_VIEW) });
+  const { data: categoriesData } = useCategories(undefined, { enabled: has(PERMISSIONS.CATEGORY_VIEW) });
   const vendors = vendorData?.vendors ?? [];
   const categories = categoriesData?.categories ?? [];
 

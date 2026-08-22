@@ -5,7 +5,7 @@ import { Providers } from "@/providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Inventory Management",
+  title: "Kazi Express",
   description: "Premium enterprise admin dashboard for sales, inventory, operations and workforce management.",
 };
 
