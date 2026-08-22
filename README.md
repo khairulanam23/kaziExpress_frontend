@@ -69,3 +69,19 @@ src/
 
 - Replace the seed data in `src/data/*` and the Zustand actions in `src/store/inventory-store.ts` with TanStack Query hooks in a new `src/services/` layer — the UI already consumes typed data shapes from `src/types`, so screens shouldn't need structural changes.
 - `useAuthStore` currently checks credentials client-side; swap `login()` for a real API call and keep the same return contract (`{ success, message }`) to avoid touching the form.
+
+---
+
+## Contributors
+
+### Final Contributor
+
+**Khairul Anam**
+- GitHub: [github.com/khairulanam23](https://github.com/khairulanam23)
+- Email: [mka.rifat.24@gmail.com](mailto:mka.rifat.24@gmail.com)
+
+Responsible for the final round of work on this frontend — feature completion, integration with the backend API, fixes, and documentation.
+
+### Special Thanks
+
+Special thanks to [Ishrat](https://github.com/Ishrat2413) for the contributions and support that made this project possible.
