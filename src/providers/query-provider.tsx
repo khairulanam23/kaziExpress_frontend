@@ -25,10 +25,17 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
       new QueryClient({
         defaultOptions: {
           queries: {
-            // Socket events invalidate the cache, so a long stale time is safe.
+            // Socket events do the moment-to-moment invalidation, so data can
+            // sit for a while without refetching.
             staleTime: 5 * 60 * 1000,
             gcTime: 10 * 60 * 1000,
-            refetchOnWindowFocus: false,
+            // But the socket is not a guarantee: events raised while the tab
+            // was backgrounded or the connection was down are never replayed.
+            // Refetching stale queries on focus and on reconnect is the floor
+            // under that — without it a screen left open can stay wrong
+            // indefinitely.
+            refetchOnWindowFocus: true,
+            refetchOnReconnect: true,
             retry: shouldRetry,
           },
           mutations: {
