@@ -1,6 +1,6 @@
-# Dabang Admin — Sales, Inventory & Operations Dashboard
+# Kazi Express Admin — Sales, Inventory & Operations Dashboard
 
-A production-ready, **frontend-only** enterprise admin dashboard built with Next.js App Router. Inspired by the layout and information architecture of the [Dabang](https://themewagon.github.io/dabang) template, redesigned from scratch with a distinct visual identity, and extended with full mock CRUD flows.
+A production-ready, **frontend-only** enterprise admin dashboard built with Next.js App Router. Inspired by the layout and information architecture of the [Kazi Express](https://themewagon.github.io/Kazi Express) template, redesigned from scratch with a distinct visual identity, and extended with full mock CRUD flows.
 
 There is **no backend** — every feature runs on realistic, seeded mock data held in Zustand stores, ready to be swapped for real API calls later.
 
