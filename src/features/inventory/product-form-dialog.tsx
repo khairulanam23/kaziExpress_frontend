@@ -26,6 +26,7 @@ import { useVendors } from "@/hooks/queries/use-vendors";
 import { usePermissions } from "@/hooks/use-permissions";
 import { PERMISSIONS } from "@/constants/permissions";
 import { useCategories } from "@/hooks/queries/use-categories";
+import { resolveMediaUrl } from "@/lib/media";
 import { getApiErrorMessage } from "@/lib/api-client";
 import { formatCurrency, cn } from "@/lib/utils";
 import type { Product } from "@/types";
@@ -75,6 +76,9 @@ export function ProductFormDialog({
   const [isSearchFocused, setIsSearchFocused] = React.useState(false);
   const [selectedImage, setSelectedImage] = React.useState<File | null>(null);
   const [imagePreview, setImagePreview] = React.useState<string | null>(null);
+  // A freshly picked file is a blob: URL and passes through; a stored value
+  // is resolved against the API host, or dropped if it is a dead absolute one.
+  const previewSrc = resolveMediaUrl(imagePreview);
   const [shouldRemoveImage, setShouldRemoveImage] = React.useState(false);
 
   // Vendor and category pickers are optional context: fetch them only when the
@@ -286,10 +290,10 @@ export function ProductFormDialog({
 
           <div className="flex flex-col gap-1.5">
             <Label>Product Image</Label>
-            {imagePreview ? (
+            {previewSrc ? (
               <div className="relative size-24 rounded-lg overflow-hidden border border-border group bg-muted">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={imagePreview} alt="Preview" className="size-full object-cover" />
+                <img src={previewSrc} alt="Preview" className="size-full object-cover" />
                 <button
                   type="button"
                   className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-medium transition-opacity"

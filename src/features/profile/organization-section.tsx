@@ -13,6 +13,7 @@ import { useOrganization, useUpdateOrganization, useUploadOrganizationLogo } fro
 import { getApiErrorMessage } from "@/lib/api-client";
 import { ACCEPTED_IMAGE_MIME, MAX_IMAGE_BYTES } from "@/services/profile.service";
 import { cn } from "@/lib/utils";
+import { resolveMediaUrl } from "@/lib/media";
 import type { OrganizationProfile } from "@/types";
 import { formatFileSize } from "./document-helpers";
 
@@ -37,6 +38,7 @@ const FIELDS: { key: keyof OrganizationProfile; label: string; placeholder?: str
  */
 export function OrganizationSection() {
   const { data: org, isLoading, isError, error, refetch } = useOrganization();
+  const logoSrc = resolveMediaUrl(org?.logoUrl);
   const update = useUpdateOrganization();
   const uploadLogo = useUploadOrganizationLogo();
   const inputRef = React.useRef<HTMLInputElement>(null);
@@ -117,11 +119,11 @@ export function OrganizationSection() {
             {/* Logo */}
             <div className="bg-muted/40 flex items-center gap-4 rounded-xl p-4">
               <div className="relative">
-                {org?.logoUrl ? (
+                {logoSrc ? (
                   // eslint-disable-next-line @next/next/no-img-element -- logo is served from the API host
                   <img
-                    src={org.logoUrl}
-                    alt={`${org.name} logo`}
+                    src={logoSrc}
+                    alt={`${org?.name ?? "Organisation"} logo`}
                     className="bg-card size-20 rounded-xl object-contain p-1.5 shadow-sm"
                   />
                 ) : (

@@ -1,6 +1,7 @@
 import * as React from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
+import { resolveMediaUrl } from "@/lib/media";
 
 const GRADIENTS = [
   "from-[#3D5AFE] to-[#2FA8F0]",
@@ -58,12 +59,13 @@ export function ProductThumb({
 }) {
   const [imgError, setImgError] = React.useState(false);
   const gradient = GRADIENTS[hashString(name) % GRADIENTS.length];
+  const src = resolveMediaUrl(imageUrl);
 
-  if (imageUrl && !imgError) {
+  if (src && !imgError) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
-        src={imageUrl}
+        src={src}
         alt={name}
         onError={() => setImgError(true)}
         className={cn("shrink-0 object-cover rounded-xl", size, className)}
@@ -107,14 +109,15 @@ export function ProductMedia({
 }) {
   const [imgError, setImgError] = React.useState(false);
   const gradient = GRADIENTS[hashString(name) % GRADIENTS.length];
-  const showImage = !!imageUrl && !imgError;
+  const src = resolveMediaUrl(imageUrl);
+  const showImage = !!src && !imgError;
 
   return (
     <div className={cn("bg-muted relative w-full overflow-hidden", aspect, className)}>
       {showImage ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={imageUrl}
+          src={src ?? undefined}
           alt={name}
           loading="lazy"
           onError={() => setImgError(true)}
@@ -161,11 +164,12 @@ export function UserAvatar({
   const [failed, setFailed] = React.useState(false);
   const gradient = GRADIENTS[hashString(name) % GRADIENTS.length];
   const shell = cn("shrink-0 rounded-full object-cover", size, ring && "ring-2 ring-card", className);
+  const src = resolveMediaUrl(imageUrl);
 
-  if (imageUrl && !failed) {
+  if (src && !failed) {
     return (
       // eslint-disable-next-line @next/next/no-img-element -- avatars come from the API host, not the Next image pipeline
-      <img src={imageUrl} alt={`${name}'s profile photo`} onError={() => setFailed(true)} className={shell} />
+      <img src={src} alt={`${name}'s profile photo`} onError={() => setFailed(true)} className={shell} />
     );
   }
 
