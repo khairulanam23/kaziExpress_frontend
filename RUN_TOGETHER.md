@@ -1,35 +1,60 @@
-# Running the connected Charger Labs system
+# Running the two halves together
 
-Two zips, one system:
-- `backend-charger-labs.zip` — Express + Prisma + PostgreSQL (Neon) API
-- `dabang-dashboard.zip` — Next.js dashboard, wired to that API via TanStack Query
+The system is two repositories:
 
-## 1. Backend setup
+- `kaziExpress_backend` — Express + Prisma + PostgreSQL (Neon) API
+- `kaziExpress_frontend` — this Next.js dashboard, which consumes that API
+
+The API must be running before the dashboard is useful; the dashboard holds no data of its own.
+
+## 1. Backend
 
 ```bash
-unzip backend-charger-labs.zip && cd backend
+cd kaziExpress_backend
 npm install
 npx prisma generate
-npx prisma migrate dev --name init
-npx prisma db seed
+npx prisma migrate deploy     # or `migrate dev` on a fresh local database
+npm run seed                  # optional demo data
 npm run dev
 ```
-Runs on `http://localhost:5000`, API base `http://localhost:5000/api/v1`.
-Demo accounts seeded: `admin@example.com` / `admin123`, `employee@example.com` / `employee123`.
 
-## 2. Frontend setup
+Runs on `http://localhost:5000`, API base `http://localhost:5000/api/v1`.
+
+Copy `.env.example` to `.env` first — the server validates its configuration at boot and
+refuses to start if anything required is missing.
+
+## 2. Frontend
 
 ```bash
-unzip dabang-dashboard.zip && cd dabang-dashboard
+cd kaziExpress_frontend
 npm install
-cp .env.local.example .env.local   # already points to http://localhost:5000/api/v1
 npm run dev
 ```
-Runs on `http://localhost:3000`. Log in with the seeded admin/employee accounts above.
+
+Create `.env.local`:
+
+```
+NEXT_PUBLIC_API_BASE_URL=http://localhost:5000/api/v1
+NEXT_PUBLIC_API_URL=http://localhost:5000
+```
+
+Runs on `http://localhost:3000`. Sign in with a seeded account.
 
 ## 3. Verify the connection
 
-- Login page → sign in → should redirect to `/dashboard` with real counts (not zeros/mock numbers)
-- Inventory page → should list the 4 seeded products
-- Operations page → should show the 1 seeded task
-- Employees page → should show the 2 seeded employees
+- **Login** → signing in should redirect to `/dashboard` with figures drawn from the database.
+- **Components / Products** → both catalogue pages should list the seeded items.
+- **Operations** → seeded production tasks should appear.
+- **Employees** → the seeded workforce should appear.
+- **Live updates** → edit a product in one browser tab; a second tab on a screen showing that
+  product should update without a reload. If it does not, the Socket.IO connection is not
+  established — check `NEXT_PUBLIC_API_URL`.
+
+## Common problems
+
+| Symptom | Cause |
+| --- | --- |
+| Every request fails with a network error | The API is not running, or `NEXT_PUBLIC_API_BASE_URL` points elsewhere |
+| Login succeeds but every other call returns 401 | Backend `JWT_SECRET` changed since the session was issued — sign out and back in |
+| Data changes only appear after a reload | Socket.IO is not connected; check `NEXT_PUBLIC_API_URL` and the browser console |
+| Uploaded images do not appear | `STORAGE_PROVIDER` is `local` on a host with an ephemeral filesystem — use `cloudinary` |
