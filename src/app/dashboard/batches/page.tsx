@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Layers, Lock, Search } from "lucide-react";
+import { GitBranch, Layers, Lock, Search } from "lucide-react";
 import { SectionHeader } from "@/components/shared/chart-card";
 import { PermissionGate } from "@/components/shared/permission-gate";
 import { PERMISSIONS } from "@/constants/permissions";
@@ -16,6 +16,10 @@ import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AddStockDialog, AdjustStockDialog } from "@/features/inventory/stock-dialogs";
+import { BatchTraceView } from "@/features/inventory/batch-trace";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { usePermissions } from "@/hooks/use-permissions";
 import { useBatches } from "@/hooks/queries/use-inventory";
 import { useProducts } from "@/hooks/queries/use-products";
 import { batchAvailable, num, percent, totalAvailable, totalReserved } from "@/lib/calc";
@@ -28,6 +32,10 @@ export default function BatchesPage() {
   const [productId, setProductId] = React.useState("all");
   const [availability, setAvailability] = React.useState<"all" | "available" | "reserved" | "depleted">("all");
   const [page, setPage] = React.useState(1);
+  // Genealogy is fetched only once a batch is actually chosen.
+  const [tracing, setTracing] = React.useState<{ id: string; label: string; product: string } | null>(null);
+  const { has } = usePermissions();
+  const canTrace = has(PERMISSIONS.INVENTORY_MANAGE_BATCHES);
 
   const { data: batches = [], isLoading, isError, error, refetch } = useBatches(
     productId === "all" ? undefined : productId,
@@ -188,6 +196,7 @@ export default function BatchesPage() {
                     <TableHead className="text-right">Available</TableHead>
                     <TableHead className="min-w-28">Consumed</TableHead>
                     <TableHead>Created</TableHead>
+                    <TableHead className="text-right">Trace</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -239,6 +248,20 @@ export default function BatchesPage() {
                           <p>{formatDate(b.createdAt)}</p>
                           <p className="text-xs">{b.createdBy?.name ?? "—"}</p>
                         </TableCell>
+                        <TableCell className="text-right">
+                          <PermissionGate permission={PERMISSIONS.INVENTORY_MANAGE_BATCHES}>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() =>
+                                setTracing({ id: b.id, label: b.batchNumber, product: b.product?.name ?? "Unknown product" })
+                              }
+                            >
+                              <GitBranch className="size-3.5" />
+                              Trace
+                            </Button>
+                          </PermissionGate>
+                        </TableCell>
                       </TableRow>
                     );
                   })}
@@ -258,6 +281,23 @@ export default function BatchesPage() {
           </>
         )}
       </Card>
+
+      {/* Genealogy: what this batch was made from, and what was made from it. */}
+      <Dialog open={!!tracing && canTrace} onOpenChange={(open) => !open && setTracing(null)}>
+        <DialogContent className="max-h-[90vh] max-w-5xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex flex-wrap items-center gap-2">
+              <GitBranch className="size-4" aria-hidden />
+              Batch trace
+              {tracing && <span className="font-mono text-sm font-normal">{tracing.label}</span>}
+            </DialogTitle>
+            <DialogDescription>
+              {tracing?.product} — where this stock came from, and everything built with it.
+            </DialogDescription>
+          </DialogHeader>
+          <BatchTraceView batchId={tracing?.id ?? null} />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

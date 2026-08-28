@@ -1,5 +1,6 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from "axios";
 import { useAuthStore } from "@/store/auth-store";
+import { coerceDecimals } from "./decimal";
 
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5000/api/v1";
 
@@ -64,7 +65,15 @@ function forceLogout() {
 }
 
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Prisma sends Decimal columns as strings, so normalise them here rather
+    // than at every call site — see `lib/decimal.ts`. Binary payloads (PDF,
+    // CSV, file downloads) are passed through untouched.
+    if (response.data && typeof response.data === "object" && !(response.data instanceof Blob)) {
+      response.data = coerceDecimals(response.data);
+    }
+    return response;
+  },
   async (error: AxiosError) => {
     const originalRequest = error.config as (InternalAxiosRequestConfig & { _retry?: boolean }) | undefined;
 

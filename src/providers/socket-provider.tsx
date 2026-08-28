@@ -5,6 +5,7 @@ import { io, type Socket } from "socket.io-client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useAuthStore } from "@/store/auth-store";
+import { PERMISSIONS } from "@/constants/permissions";
 import type { Notification } from "@/types";
 
 interface SocketContextType {
@@ -53,6 +54,10 @@ export const MODEL_QUERY_KEYS: Record<string, string[]> = {
   permission: ["permissions"],
   permissionauditlog: ["permissions"],
   vendor: ["vendors", "products", "global-search"],
+  customer: ["customers", "profit"],
+  // Selling finished goods moves stock, so it changes far more than the sales
+  // screens: the batch, the product, valuation, the dashboard and profit.
+  disposition: ["finished-goods", "dispositions", "profit", "inventory", "products", "stock-movements", "reports", "dashboard"],
   category: ["categories", "products"],
   notification: ["notifications"],
   systemconfig: ["config", "attendance"],
@@ -77,9 +82,16 @@ export function SocketProvider({ children }: { children: ReactNode }) {
 
   // Kept in a ref so the rooms can be re-joined on reconnect without
   // re-creating the socket every time the user object changes identity.
-  const identityRef = useRef<{ id: string; role: string } | null>(null);
+  const identityRef = useRef<{ id: string; role: string; permissions: string[] } | null>(null);
   useEffect(() => {
-    identityRef.current = user ? { id: user.id, role: user.role } : null;
+    identityRef.current = user
+      ? {
+          id: user.id,
+          role: user.role,
+          // Admins implicitly hold every permission, mirroring the server.
+          permissions: user.role === "ADMIN" ? Object.keys(PERMISSIONS) : (user.permissions ?? []),
+        }
+      : null;
   }, [user]);
 
   useEffect(() => {
@@ -87,12 +99,18 @@ export function SocketProvider({ children }: { children: ReactNode }) {
 
     const socketInstance = io(resolveSocketUrl(), { transports: ["websocket", "polling"] });
 
-    /** The backend only delivers events to `user:<id>` / `role:<ROLE>` rooms. */
+    /**
+     * The backend delivers to `user:<id>`, `role:<ROLE>` and `perm:<KEY>` rooms.
+     * Joining the permission rooms is what stops this session being woken by
+     * changes to modules it cannot open — the announcements carry no data, so
+     * this is about traffic, not access.
+     */
     const joinRooms = () => {
       const identity = identityRef.current;
       if (!identity) return;
       socketInstance.emit("join_user", identity.id);
       socketInstance.emit("join_role", identity.role);
+      socketInstance.emit("join_permissions", identity.permissions);
     };
 
     // Events that land while the socket is down are gone for good — nothing
@@ -134,12 +152,15 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     };
   }, [isAuthenticated, queryClient]);
 
-  // Re-join rooms when the signed-in identity changes on an open connection.
+  // Re-join rooms when the signed-in identity — or its permission set —
+  // changes on an open connection.
+  const permissionSignature = (user?.role === "ADMIN" ? Object.keys(PERMISSIONS) : (user?.permissions ?? [])).join(",");
   useEffect(() => {
     if (!socket?.connected || !user) return;
     socket.emit("join_user", user.id);
     socket.emit("join_role", user.role);
-  }, [socket, user]);
+    socket.emit("join_permissions", permissionSignature ? permissionSignature.split(",") : []);
+  }, [socket, user, permissionSignature]);
 
   return <SocketContext.Provider value={{ socket, isConnected }}>{children}</SocketContext.Provider>;
 }

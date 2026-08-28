@@ -6,8 +6,14 @@ import {
   Award,
   Boxes,
   CalendarCheck,
+  Coins,
   Factory,
+  Gauge,
   PieChart,
+  Scale,
+  ShoppingCart,
+  Trash2,
+  Truck,
   Wallet,
   type LucideIcon,
 } from "lucide-react";
@@ -20,6 +26,13 @@ import { InventoryReportView } from "@/features/reports/inventory-report";
 import { PayrollReportView } from "@/features/reports/payroll-report";
 import { ProductionReportView } from "@/features/reports/production-report";
 import { StockMovementReportView } from "@/features/reports/stock-movement-report";
+import { WasteReportView } from "@/features/reports/waste-report";
+import { ReorderReportView } from "@/features/reports/reorder-report";
+import { ProductionCostReportView } from "@/features/reports/production-cost-report";
+import { ValuationReportView } from "@/features/reports/valuation-report";
+import { LabourEfficiencyReportView } from "@/features/reports/labour-efficiency-report";
+import { VendorPerformanceReportView } from "@/features/reports/vendor-performance-report";
+import { ProfitReportView } from "@/features/reports/profit-report";
 import { PERMISSIONS } from "@/constants/permissions";
 import { usePermissions } from "@/hooks/use-permissions";
 
@@ -46,12 +59,44 @@ export default function ReportsPage() {
   const allTabs = React.useMemo<ReportTab[]>(
     () => [
       {
+        value: "profit",
+        label: "Profit",
+        icon: Coins,
+        blurb: "Revenue against what the goods cost to make",
+        permission: PERMISSIONS.REPORT_PROFIT,
+        render: () => <ProfitReportView />,
+      },
+      {
         value: "inventory",
         label: "Inventory",
         icon: Boxes,
         blurb: "Valuation, stock health and category breakdown",
         permission: PERMISSIONS.REPORT_INVENTORY,
         render: () => <InventoryReportView />,
+      },
+      {
+        value: "reorder",
+        label: "Reorder",
+        icon: ShoppingCart,
+        blurb: "What to order now, based on how fast it is actually being used",
+        permission: PERMISSIONS.REPORT_INVENTORY,
+        render: () => <ReorderReportView />,
+      },
+      {
+        value: "valuation",
+        label: "Valuation",
+        icon: Scale,
+        blurb: "Stock on hand at what it actually cost to acquire",
+        permission: PERMISSIONS.REPORT_INVENTORY,
+        render: () => <ValuationReportView />,
+      },
+      {
+        value: "waste",
+        label: "Waste",
+        icon: Trash2,
+        blurb: "What was damaged or written off, and what it cost",
+        permission: PERMISSIONS.REPORT_STOCK_MOVEMENTS,
+        render: () => <WasteReportView />,
       },
       {
         value: "movements",
@@ -68,6 +113,30 @@ export default function ReportsPage() {
         blurb: "Output, completion rates and per-employee yield",
         permission: PERMISSIONS.REPORT_PRODUCTION,
         render: () => <ProductionReportView />,
+      },
+      {
+        value: "production-cost",
+        label: "Production cost",
+        icon: Coins,
+        blurb: "What each run cost to make, per unit",
+        permission: PERMISSIONS.REPORT_PRODUCTION,
+        render: () => <ProductionCostReportView />,
+      },
+      {
+        value: "labour",
+        label: "Labour",
+        icon: Gauge,
+        blurb: "Output per hour and how often deadlines are met",
+        permission: PERMISSIONS.REPORT_PRODUCTION,
+        render: () => <LabourEfficiencyReportView />,
+      },
+      {
+        value: "vendors",
+        label: "Vendors",
+        icon: Truck,
+        blurb: "Purchase price history and cost drift per supplier",
+        permission: PERMISSIONS.REPORT_INVENTORY,
+        render: () => <VendorPerformanceReportView />,
       },
       {
         value: "attendance",

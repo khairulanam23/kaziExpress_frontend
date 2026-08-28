@@ -1,6 +1,13 @@
 import { apiClient, downloadFile, type ApiEnvelope } from "@/lib/api-client";
 import type {
   AttendanceReport,
+  BatchTrace,
+  LabourEfficiencyReport,
+  ProductionCostReport,
+  ReorderReport,
+  ValuationReport,
+  VendorPerformanceReport,
+  WasteReport,
   EmployeePerformanceReport,
   InventoryReport,
   ItemType,
@@ -120,4 +127,55 @@ export const reportsService = {
   },
   downloadEmployeePerformancePdf: (employeeId: string, params?: DateRangeParams) =>
     downloadFile(`/reports/employee-performance/${employeeId}/pdf`, `employee-performance-${stamp()}.pdf`, params),
+};
+
+// ── Analytical reports (roadmap items 4, 5, 7, 11, 12, 13) ─────────────────
+
+export interface DateRangeParams {
+  from?: string;
+  to?: string;
+}
+
+export const analyticsService = {
+  /** GET /reports/waste — what was destroyed, what it cost, and where. */
+  waste: async (params?: DateRangeParams & { productId?: string }) => {
+    const { data } = await apiClient.get<ApiEnvelope<WasteReport>>("/reports/waste", { params });
+    return data.data;
+  },
+
+  /** GET /reports/reorder — consumption rate against vendor lead time. */
+  reorder: async (params?: { lookbackDays?: number; horizonDays?: number }) => {
+    const { data } = await apiClient.get<ApiEnvelope<ReorderReport>>("/reports/reorder", { params });
+    return data.data;
+  },
+
+  /** GET /reports/production-cost — actual material plus attributed labour. */
+  productionCost: async (params?: DateRangeParams & { productId?: string }) => {
+    const { data } = await apiClient.get<ApiEnvelope<ProductionCostReport>>("/reports/production-cost", { params });
+    return data.data;
+  },
+
+  /** GET /reports/valuation — stock on hand at acquisition cost. */
+  valuation: async (params?: { categoryId?: string }) => {
+    const { data } = await apiClient.get<ApiEnvelope<ValuationReport>>("/reports/valuation", { params });
+    return data.data;
+  },
+
+  /** GET /reports/labour-efficiency — output per hour and schedule adherence. */
+  labourEfficiency: async (params?: DateRangeParams) => {
+    const { data } = await apiClient.get<ApiEnvelope<LabourEfficiencyReport>>("/reports/labour-efficiency", { params });
+    return data.data;
+  },
+
+  /** GET /reports/vendor-performance — purchase price history and drift. */
+  vendorPerformance: async (params?: DateRangeParams & { vendorId?: string }) => {
+    const { data } = await apiClient.get<ApiEnvelope<VendorPerformanceReport>>("/reports/vendor-performance", { params });
+    return data.data;
+  },
+
+  /** GET /inventory/batches/:id/trace — batch genealogy and recall list. */
+  batchTrace: async (batchId: string) => {
+    const { data } = await apiClient.get<ApiEnvelope<BatchTrace>>(`/inventory/batches/${batchId}/trace`);
+    return data.data;
+  },
 };

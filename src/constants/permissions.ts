@@ -86,6 +86,15 @@ export const PERMISSIONS = {
   EMPLOYEE_UPDATE: "EMPLOYEE_UPDATE",
   EMPLOYEE_DELETE: "EMPLOYEE_DELETE",
   EMPLOYEE_MANAGE_PERMISSIONS: "EMPLOYEE_MANAGE_PERMISSIONS",
+
+  // Sales & finished goods
+  FINISHED_GOODS_VIEW: "FINISHED_GOODS_VIEW",
+  SALES_RECORD: "SALES_RECORD",
+  SALES_REVERSE: "SALES_REVERSE",
+  SALES_SET_PRICE: "SALES_SET_PRICE",
+  CUSTOMER_VIEW: "CUSTOMER_VIEW",
+  CUSTOMER_MANAGE: "CUSTOMER_MANAGE",
+  REPORT_PROFIT: "REPORT_PROFIT",
 } as const;
 
 export type PermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -103,11 +112,16 @@ export const PERMISSION_CATEGORY_META: Record<string, { icon: string; blurb: str
   "Reports & Analytics": { icon: "PieChart", blurb: "Reporting and exports" },
   Dashboard: { icon: "LayoutDashboard", blurb: "Overview metrics" },
   "Employee & Access Control": { icon: "Users", blurb: "Staff records and who can do what" },
+  "Sales & Finished Goods": { icon: "Store", blurb: "Selling what the floor produces, and to whom" },
 };
 
 /** Permissions that meaningfully widen a user's reach — flagged before saving. */
 export const SENSITIVE_PERMISSIONS: string[] = [
   PERMISSIONS.EMPLOYEE_MANAGE_PERMISSIONS,
+  // Reversing a sale rewrites recorded revenue, so it is held apart from
+  // recording one.
+  PERMISSIONS.SALES_REVERSE,
+  PERMISSIONS.SALES_SET_PRICE,
   PERMISSIONS.EMPLOYEE_DELETE,
   PERMISSIONS.PAYROLL_RECORD_PAYMENT,
   PERMISSIONS.PAYROLL_UPDATE_RATE,
@@ -125,5 +139,6 @@ export const PRESET_META: Record<string, { label: string; blurb: string; icon: s
   HR_MANAGER: { label: "HR manager", blurb: "Employee records, attendance and overtime", icon: "Users" },
   PAYROLL_MANAGER: { label: "Payroll manager", blurb: "Payroll, rates and salary payments", icon: "Wallet" },
   OPERATIONS_MANAGER: { label: "Operations manager", blurb: "Inventory plus production oversight", icon: "Settings2" },
+  SALES_MANAGER: { label: "Sales manager", blurb: "Sell finished goods, set prices and manage customers", icon: "Store" },
   FULL_ACCESS_EMPLOYEE: { label: "Full access", blurb: "Everything an administrator can do", icon: "ShieldCheck" },
 };

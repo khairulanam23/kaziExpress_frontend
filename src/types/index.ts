@@ -1,3 +1,6 @@
+export * from "./sales";
+export * from "./analytics";
+
 // ---------------------------------------------------------------------------
 // Shared enums — mirrors prisma/schema.prisma on the backend exactly.
 // ---------------------------------------------------------------------------

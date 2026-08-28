@@ -8,6 +8,7 @@ const REPORT_PERMISSIONS = [
   PERMISSIONS.REPORT_ATTENDANCE,
   PERMISSIONS.REPORT_PAYROLL,
   PERMISSIONS.REPORT_EMPLOYEE_PERFORMANCE,
+  PERMISSIONS.REPORT_PROFIT,
 ] as const;
 import type { NavItem } from "@/types";
 
@@ -59,6 +60,18 @@ export const NAV_GROUPS: NavGroup[] = [
       { label: "Shopfloor", href: "/dashboard/shopfloor", icon: "LayoutGrid", permission: PERMISSIONS.PRODUCTION_VIEW },
       { label: "Tasks", href: "/dashboard/operations", icon: "Factory", permission: PERMISSIONS.PRODUCTION_VIEW },
       { label: "Requests", href: "/dashboard/refills", icon: "ClipboardList" },
+    ],
+  },
+  {
+    label: "Sales",
+    items: [
+      {
+        label: "Finished Goods",
+        href: "/dashboard/finished-goods",
+        icon: "PackageCheck",
+        permission: PERMISSIONS.FINISHED_GOODS_VIEW,
+      },
+      { label: "Customers", href: "/dashboard/customers", icon: "Store", permission: PERMISSIONS.CUSTOMER_VIEW },
     ],
   },
   {
@@ -135,6 +148,8 @@ export const ROUTE_ACCESS: RouteRule[] = [
   { prefix: "/dashboard/employees", permission: PERMISSIONS.EMPLOYEE_VIEW },
   { prefix: "/dashboard/attendance", permission: PERMISSIONS.ATTENDANCE_VIEW },
   { prefix: "/dashboard/payroll", permission: PERMISSIONS.PAYROLL_VIEW },
+  { prefix: "/dashboard/finished-goods", permission: PERMISSIONS.FINISHED_GOODS_VIEW },
+  { prefix: "/dashboard/customers", permission: PERMISSIONS.CUSTOMER_VIEW },
 ];
 
 /** Most specific matching rule for a path, or undefined when unrestricted. */

@@ -101,6 +101,18 @@ export function currentMonthRange(): DateRange {
   };
 }
 
+/**
+ * A quarter back. Production runs and purchases are sparse compared with
+ * attendance, so a report defaulting to the current month often opens empty on
+ * a system that has plenty to show — this matches the API's own 90-day default.
+ */
+export function lastQuarterRange(): DateRange {
+  const now = new Date();
+  const start = new Date(now);
+  start.setDate(start.getDate() - 90);
+  return { from: toDateInput(start), to: toDateInput(now) };
+}
+
 const RANGE_PRESETS: { label: string; build: () => DateRange }[] = [
   {
     label: "This month",
