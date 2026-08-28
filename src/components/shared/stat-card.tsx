@@ -13,6 +13,7 @@ interface StatCardProps {
   helper?: string;
   accent?: "primary" | "secondary" | "accent" | "success" | "warning" | "destructive";
   sparkline?: number[];
+  className?: string;
 }
 
 const accentMap = {
@@ -32,6 +33,7 @@ export function StatCard({
   helper,
   accent = "primary",
   sparkline,
+  className,
 }: StatCardProps) {
   return (
     <motion.div
@@ -39,12 +41,12 @@ export function StatCard({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, ease: "easeOut" }}
       whileHover={{ y: -3 }}
-      className="card-glow rounded-2xl h-full"
+      className={cn("card-glow rounded-2xl h-full min-w-0", className)}
     >
-      <Card className="h-full flex flex-col gap-4 py-5 hover:shadow-[0_12px_32px_-12px_rgba(61,90,254,0.25)]">
-        <div className="flex items-center justify-between px-6">
-          <span className={cn("flex size-10 items-center justify-center rounded-xl", accentMap[accent])}>
-            <Icon className="size-5" />
+      <Card className="h-full flex flex-col gap-3 sm:gap-4 py-4 sm:py-5 min-w-0 overflow-hidden hover:shadow-[0_12px_32px_-12px_rgba(61,90,254,0.25)]">
+        <div className="flex items-center justify-between px-4 sm:px-5 lg:px-6">
+          <span className={cn("flex size-9 sm:size-10 shrink-0 items-center justify-center rounded-xl", accentMap[accent])}>
+            <Icon className="size-4 sm:size-5" />
           </span>
           {trend && (
             <span
@@ -62,16 +64,25 @@ export function StatCard({
             </span>
           )}
         </div>
-        <div className="flex flex-col gap-1 px-6 flex-1">
-          <span className="text-2xl font-semibold tabular leading-none">{value}</span>
-          <span className="text-muted-foreground text-sm">{label}</span>
+        <div className="flex flex-col gap-1 px-4 sm:px-5 lg:px-6 flex-1 min-w-0">
+          <span
+            className="text-xl sm:text-2xl font-semibold tabular tracking-tight leading-tight sm:leading-none truncate"
+            title={value}
+          >
+            {value}
+          </span>
+          <span className="text-muted-foreground text-xs sm:text-sm font-medium line-clamp-1">{label}</span>
         </div>
         {sparkline && sparkline.length > 1 && (
-          <div className="px-6">
+          <div className="px-4 sm:px-5 lg:px-6">
             <Sparkline data={sparkline} accent={accent} />
           </div>
         )}
-        {helper && <div className="text-muted-foreground px-6 text-xs mt-auto">{helper}</div>}
+        {helper && (
+          <div className="text-muted-foreground px-4 sm:px-5 lg:px-6 text-xs mt-auto line-clamp-2">
+            {helper}
+          </div>
+        )}
       </Card>
     </motion.div>
   );

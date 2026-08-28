@@ -60,87 +60,89 @@ function TodayAttendanceCard() {
   const overtime = overtimeHours(worked, required);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-base">
-          <CalendarCheck className="text-primary size-4" />
-          Today&apos;s attendance
-        </CardTitle>
-        <CardDescription>
-          {today?.checkedOut ? "Your shift is complete." : today?.checkedIn ? "You're clocked in." : "Not checked in yet."}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-4">
-        {isLoading ? (
-          <Skeleton className="h-28 w-full rounded-xl" />
-        ) : (
-          <>
-            <div className="grid grid-cols-3 gap-2">
-              <div className="bg-muted/40 flex flex-col gap-0.5 rounded-xl p-2.5">
-                <span className="text-muted-foreground flex items-center gap-1 text-xs">
-                  <LogIn className="size-3" /> In
-                </span>
-                <span className="tabular text-sm font-semibold">{today?.checkIn ? formatTime(today.checkIn) : "—"}</span>
-              </div>
-              <div className="bg-muted/40 flex flex-col gap-0.5 rounded-xl p-2.5">
-                <span className="text-muted-foreground flex items-center gap-1 text-xs">
-                  <LogOut className="size-3" /> Out
-                </span>
-                <span className="tabular text-sm font-semibold">{today?.checkOut ? formatTime(today.checkOut) : "—"}</span>
-              </div>
-              <div className="bg-muted/40 flex flex-col gap-0.5 rounded-xl p-2.5">
-                <span className="text-muted-foreground flex items-center gap-1 text-xs">
-                  <Clock className="size-3" /> Worked
-                </span>
-                <span className="tabular text-sm font-semibold">{formatHours(worked)}</span>
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <Progress value={percent(worked, required)} />
-              <div className="text-muted-foreground flex justify-between text-xs">
-                <span>{formatHours(required)} required</span>
-                {overtime > 0 && (
-                  <span className="text-warning">
-                    {formatHours(overtime)}
-                    {" overtime — awaiting approval"}
+    <Card className="h-full flex flex-col justify-between min-w-0">
+      <div>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <CalendarCheck className="text-primary size-4 shrink-0" />
+            Today&apos;s attendance
+          </CardTitle>
+          <CardDescription>
+            {today?.checkedOut ? "Your shift is complete." : today?.checkedIn ? "You're clocked in." : "Not checked in yet."}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          {isLoading ? (
+            <Skeleton className="h-28 w-full rounded-xl" />
+          ) : (
+            <>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="bg-muted/40 flex flex-col gap-0.5 rounded-xl p-2.5 min-w-0">
+                  <span className="text-muted-foreground flex items-center gap-1 text-xs">
+                    <LogIn className="size-3 shrink-0" /> <span className="truncate">In</span>
                   </span>
-                )}
+                  <span className="tabular text-sm font-semibold truncate">{today?.checkIn ? formatTime(today.checkIn) : "—"}</span>
+                </div>
+                <div className="bg-muted/40 flex flex-col gap-0.5 rounded-xl p-2.5 min-w-0">
+                  <span className="text-muted-foreground flex items-center gap-1 text-xs">
+                    <LogOut className="size-3 shrink-0" /> <span className="truncate">Out</span>
+                  </span>
+                  <span className="tabular text-sm font-semibold truncate">{today?.checkOut ? formatTime(today.checkOut) : "—"}</span>
+                </div>
+                <div className="bg-muted/40 flex flex-col gap-0.5 rounded-xl p-2.5 min-w-0">
+                  <span className="text-muted-foreground flex items-center gap-1 text-xs">
+                    <Clock className="size-3 shrink-0" /> <span className="truncate">Worked</span>
+                  </span>
+                  <span className="tabular text-sm font-semibold truncate">{formatHours(worked)}</span>
+                </div>
               </div>
-            </div>
 
-            <div className="flex gap-2">
-              <Button
-                className="flex-1"
-                disabled={!!today?.checkedIn || checkIn.isPending}
-                onClick={() =>
-                  checkIn.mutate(undefined, {
-                    onSuccess: () => toast.success("Checked in"),
-                    onError: (e) => toast.error("Couldn't check in", { description: getApiErrorMessage(e) }),
-                  })
-                }
-              >
-                {checkIn.isPending ? <Loader2 className="size-4 animate-spin" /> : <LogIn className="size-4" />}
-                Check in
-              </Button>
-              <Button
-                variant="outline"
-                className="flex-1"
-                disabled={!today?.checkedIn || !!today?.checkedOut || checkOut.isPending}
-                onClick={() =>
-                  checkOut.mutate(undefined, {
-                    onSuccess: (r) => toast.success("Checked out", { description: `${formatHours(r.workedHours)} worked.` }),
-                    onError: (e) => toast.error("Couldn't check out", { description: getApiErrorMessage(e) }),
-                  })
-                }
-              >
-                {checkOut.isPending ? <Loader2 className="size-4 animate-spin" /> : <LogOut className="size-4" />}
-                Check out
-              </Button>
-            </div>
-          </>
-        )}
-      </CardContent>
+              <div className="flex flex-col gap-1.5">
+                <Progress value={percent(worked, required)} />
+                <div className="text-muted-foreground flex justify-between text-xs">
+                  <span>{formatHours(required)} required</span>
+                  {overtime > 0 && (
+                    <span className="text-warning font-medium">
+                      {formatHours(overtime)}
+                      {" overtime"}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                <Button
+                  className="flex-1"
+                  disabled={!!today?.checkedIn || checkIn.isPending}
+                  onClick={() =>
+                    checkIn.mutate(undefined, {
+                      onSuccess: () => toast.success("Checked in"),
+                      onError: (e) => toast.error("Couldn't check in", { description: getApiErrorMessage(e) }),
+                    })
+                  }
+                >
+                  {checkIn.isPending ? <Loader2 className="size-4 animate-spin" /> : <LogIn className="size-4" />}
+                  Check in
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  disabled={!today?.checkedIn || !!today?.checkedOut || checkOut.isPending}
+                  onClick={() =>
+                    checkOut.mutate(undefined, {
+                      onSuccess: (r) => toast.success("Checked out", { description: `${formatHours(r.workedHours)} worked.` }),
+                      onError: (e) => toast.error("Couldn't check out", { description: getApiErrorMessage(e) }),
+                    })
+                  }
+                >
+                  {checkOut.isPending ? <Loader2 className="size-4 animate-spin" /> : <LogOut className="size-4" />}
+                  Check out
+                </Button>
+              </div>
+            </>
+          )}
+        </CardContent>
+      </div>
     </Card>
   );
 }
@@ -320,9 +322,13 @@ export default function ProfilePage() {
                   className="lg:col-span-2"
                 >
                   {!earnings ? (
-                    <Skeleton className="h-36 w-full rounded-xl" />
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 2xl:grid-cols-4 sm:gap-4">
+                      {Array.from({ length: 4 }).map((_, i) => (
+                        <Skeleton key={i} className="h-32 w-full rounded-2xl" />
+                      ))}
+                    </div>
                   ) : (
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 2xl:grid-cols-4 sm:gap-4">
                       <StatCard
                         label="Days worked"
                         value={String(earnings.daysWorked)}

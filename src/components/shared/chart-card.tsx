@@ -24,14 +24,15 @@ export function ChartCard({
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-40px" }}
       transition={{ duration: 0.4, ease: "easeOut" }}
+      className={cn("h-full min-w-0", className)}
     >
-      <Card className={cn("h-full", className)}>
+      <Card className="h-full flex flex-col">
         <CardHeader>
           <CardTitle className="text-base">{title}</CardTitle>
           {description && <CardDescription>{description}</CardDescription>}
           {action && <CardAction className="max-w-full">{action}</CardAction>}
         </CardHeader>
-        <CardContent className="flex-1">{children}</CardContent>
+        <CardContent className="flex-1 min-w-0">{children}</CardContent>
       </Card>
     </motion.div>
   );
