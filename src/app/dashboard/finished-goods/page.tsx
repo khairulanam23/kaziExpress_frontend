@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { toast } from "sonner";
-import { Boxes, Check, Factory, Package, PackageCheck, Pencil, Search, Store, Tag, X } from "lucide-react";
+import { Boxes, Factory, PackageCheck, Search, Store, Tag } from "lucide-react";
 import { SectionHeader } from "@/components/shared/chart-card";
 import { PermissionGate } from "@/components/shared/permission-gate";
 import { StatCard } from "@/components/shared/stat-card";
@@ -15,10 +15,12 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { PERMISSIONS } from "@/constants/permissions";
+import { CatalogGrid } from "@/components/shared/catalog-grid";
+import { ViewToggle } from "@/components/shared/view-toggle";
 import { DispositionDialog } from "@/features/sales/disposition-dialog";
-import { useFinishedGoods, useSetSellingPrice } from "@/hooks/queries/use-sales";
-import { usePermissions } from "@/hooks/use-permissions";
-import { getApiErrorMessage } from "@/lib/api-client";
+import { FinishedGoodCard, FinishedGoodCardSkeleton } from "@/features/sales/finished-good-card";
+import { MarginBar, SellingPriceCell, STATUS_META } from "@/features/sales/finished-goods-cells";
+import { useFinishedGoods } from "@/hooks/queries/use-sales";
 import { formatDate, formatMoney, formatNumber, formatQuantity } from "@/lib/utils";
 import type { FinishedGoodsItem, FinishedGoodsStatus } from "@/types";
 
@@ -30,108 +32,13 @@ import type { FinishedGoodsItem, FinishedGoodsStatus } from "@/types";
  * selling price into a margin rather than a guess.
  */
 
-const STATUS_META: Record<
-  FinishedGoodsStatus,
-  { label: string; variant: "success" | "warning" | "muted"; icon: typeof Package }
-> = {
-  UNSOLD: { label: "Unsold", variant: "success", icon: Package },
-  PARTLY_SOLD: { label: "Partly sold", variant: "warning", icon: PackageCheck },
-  FULLY_DISPOSED: { label: "Fully disposed", variant: "muted", icon: Check },
-};
-
-/** Margin drawn as a bar so healthy and thin lines separate at a glance. */
-function MarginBar({ margin }: { margin: number | null }) {
-  if (margin === null) return <span className="text-muted-foreground text-xs">No price set</span>;
-  const clamped = Math.max(0, Math.min(100, margin));
-  const tone = margin < 0 ? "bg-destructive" : margin < 15 ? "bg-warning" : "bg-success";
-  const word = margin < 0 ? "Loss" : margin < 15 ? "Thin" : "Healthy";
-  return (
-    <div className="flex items-center gap-2">
-      <div className="bg-muted h-1.5 w-14 overflow-hidden rounded-full sm:w-20">
-        <div className={`h-full rounded-full ${tone}`} style={{ width: `${Math.max(2, clamped)}%` }} />
-      </div>
-      <span className="tabular text-xs">
-        {margin.toFixed(1)}% <span className="text-muted-foreground">{word}</span>
-      </span>
-    </div>
-  );
-}
-
-/** Inline editor for the default price offered on a product's finished goods. */
-function SellingPriceCell({ item }: { item: FinishedGoodsItem }) {
-  const [editing, setEditing] = React.useState(false);
-  const [value, setValue] = React.useState(item.product.sellingPrice != null ? String(item.product.sellingPrice) : "");
-  const setPrice = useSetSellingPrice();
-  const { has } = usePermissions();
-
-  if (!has(PERMISSIONS.SALES_SET_PRICE)) {
-    return (
-      <span className="tabular text-sm">
-        {item.product.sellingPrice != null ? formatMoney(item.product.sellingPrice) : "—"}
-      </span>
-    );
-  }
-
-  const save = async () => {
-    const parsed = value.trim() === "" ? null : Number(value);
-    if (parsed !== null && (Number.isNaN(parsed) || parsed < 0)) {
-      toast.error("Enter a price of zero or more");
-      return;
-    }
-    try {
-      await setPrice.mutateAsync({ productId: item.product.id, sellingPrice: parsed });
-      toast.success(`Price for ${item.product.name} updated`);
-      setEditing(false);
-    } catch (error) {
-      toast.error("Couldn't save that price", { description: getApiErrorMessage(error) });
-    }
-  };
-
-  if (!editing) {
-    return (
-      <button
-        type="button"
-        onClick={() => setEditing(true)}
-        className="hover:bg-muted group flex items-center gap-1.5 rounded-md px-1.5 py-0.5"
-        aria-label={`Set selling price for ${item.product.name}`}
-      >
-        <span className="tabular text-sm">
-          {item.product.sellingPrice != null ? formatMoney(item.product.sellingPrice) : "Set price"}
-        </span>
-        <Pencil className="text-muted-foreground size-3 opacity-0 transition group-hover:opacity-100" aria-hidden />
-      </button>
-    );
-  }
-
-  return (
-    <div className="flex items-center gap-1">
-      <Input
-        autoFocus
-        type="number"
-        min={0}
-        step="any"
-        className="h-8 w-24"
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") void save();
-          if (e.key === "Escape") setEditing(false);
-        }}
-      />
-      <Button size="icon" variant="ghost" className="size-7" onClick={save} disabled={setPrice.isPending} aria-label="Save price">
-        <Check className="size-3.5" />
-      </Button>
-      <Button size="icon" variant="ghost" className="size-7" onClick={() => setEditing(false)} aria-label="Cancel">
-        <X className="size-3.5" />
-      </Button>
-    </div>
-  );
-}
-
 export default function FinishedGoodsPage() {
   const [search, setSearch] = React.useState("");
   const [status, setStatus] = React.useState<"ALL" | FinishedGoodsStatus>("ALL");
   const [selling, setSelling] = React.useState<FinishedGoodsItem | null>(null);
+  // Batches carry a product image, so the catalogue is the default view;
+  // the table stays for anyone comparing costs and margins down a column.
+  const [view, setView] = React.useState<"grid" | "list">("grid");
 
   const { data, isLoading, isError, error, refetch } = useFinishedGoods({
     search: search.trim() || undefined,
@@ -207,9 +114,19 @@ export default function FinishedGoodsPage() {
               </SelectContent>
             </Select>
           </div>
+          <ViewToggle view={view} onViewChange={setView} className="ml-auto" />
         </div>
 
-        {isLoading && <TableSkeleton rows={6} />}
+        {isLoading &&
+          (view === "grid" ? (
+            <CatalogGrid>
+              {Array.from({ length: 8 }).map((_, i) => (
+                <FinishedGoodCardSkeleton key={i} />
+              ))}
+            </CatalogGrid>
+          ) : (
+            <TableSkeleton rows={6} />
+          ))}
         {isError && <ErrorState error={error} onRetry={refetch} />}
 
         {data && items.length === 0 && (
@@ -220,7 +137,15 @@ export default function FinishedGoodsPage() {
           />
         )}
 
-        {data && items.length > 0 && (
+        {data && items.length > 0 && view === "grid" && (
+          <CatalogGrid>
+            {items.map((item) => (
+              <FinishedGoodCard key={item.batchId} item={item} onSell={setSelling} />
+            ))}
+          </CatalogGrid>
+        )}
+
+        {data && items.length > 0 && view === "list" && (
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>

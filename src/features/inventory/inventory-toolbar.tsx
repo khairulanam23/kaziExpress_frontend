@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { LayoutGrid, List, Search, SlidersHorizontal, X } from "lucide-react";
+import { Search, SlidersHorizontal, X } from "lucide-react";
+import { ViewToggle } from "@/components/shared/view-toggle";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,7 +13,6 @@ import { Switch } from "@/components/ui/switch";
 import { PERMISSIONS } from "@/constants/permissions";
 import { useCategories } from "@/hooks/queries/use-categories";
 import { usePermissions } from "@/hooks/use-permissions";
-import { cn } from "@/lib/utils";
 
 /**
  * Catalogue toolbar: search, filters and the view switcher.
@@ -129,34 +129,7 @@ export function InventoryToolbar({
           </Popover>
 
           {/* Grid first — the catalogue is the primary way to browse now. */}
-          <div
-            className="border-border flex items-center rounded-lg border p-0.5"
-            role="group"
-            aria-label="View mode"
-          >
-            <button
-              onClick={() => onViewChange("grid")}
-              aria-label="Grid view"
-              aria-pressed={view === "grid"}
-              className={cn(
-                "flex size-8 cursor-pointer items-center justify-center rounded-md transition-colors",
-                view === "grid" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted",
-              )}
-            >
-              <LayoutGrid className="size-4" />
-            </button>
-            <button
-              onClick={() => onViewChange("list")}
-              aria-label="List view"
-              aria-pressed={view === "list"}
-              className={cn(
-                "flex size-8 cursor-pointer items-center justify-center rounded-md transition-colors",
-                view === "list" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted",
-              )}
-            >
-              <List className="size-4" />
-            </button>
-          </div>
+          <ViewToggle view={view} onViewChange={onViewChange} />
         </div>
       </div>
 

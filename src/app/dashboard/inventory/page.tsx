@@ -8,13 +8,12 @@ import { PermissionGate } from "@/components/shared/permission-gate";
 import { PERMISSIONS } from "@/constants/permissions";
 import { Card } from "@/components/ui/card";
 import { Pagination } from "@/components/shared/pagination";
-import { ConfirmDialog } from "@/components/shared/states";
-import { Skeleton } from "@/components/ui/skeleton";
+import { ConfirmDialog, TableSkeleton } from "@/components/shared/states";
 
 import { useProducts, useDeleteProduct, useLowStockProducts } from "@/hooks/queries/use-products";
 import { InventoryToolbar } from "@/features/inventory/inventory-toolbar";
 import { InventoryTable } from "@/features/inventory/inventory-table";
-import { InventoryGrid } from "@/features/inventory/inventory-grid";
+import { InventoryGrid, InventoryGridSkeleton } from "@/features/inventory/inventory-grid";
 import { LowStockBanner } from "@/features/inventory/low-stock-banner";
 import { ProductFormDialog } from "@/features/inventory/product-form-dialog";
 import { ProductDetailsDrawer } from "@/features/inventory/product-details-drawer";
@@ -28,7 +27,8 @@ export default function InventoryPage() {
   const [search, setSearch] = React.useState("");
   const [category, setCategory] = React.useState("all");
   const [lowStockOnly, setLowStockOnly] = React.useState(false);
-  const [view, setView] = React.useState<"list" | "grid">("list");
+  // Compound products carry an image, so the catalogue is the default view.
+  const [view, setView] = React.useState<"list" | "grid">("grid");
   
   const [page, setPage] = React.useState(1);
 
@@ -114,10 +114,8 @@ export default function InventoryPage() {
         </div>
 
         {isLoading ? (
-          <div className="grid grid-cols-1 gap-4 px-6 sm:grid-cols-2 lg:grid-cols-4">
-            {Array.from({ length: PAGE_SIZE }).map((_, i) => (
-              <Skeleton key={i} className="h-40 w-full rounded-2xl" />
-            ))}
+          <div className={view === "grid" ? "px-6" : ""}>
+            {view === "grid" ? <InventoryGridSkeleton count={PAGE_SIZE} /> : <TableSkeleton rows={8} />}
           </div>
         ) : (
           <div className={view === "list" ? "" : "px-6"}>

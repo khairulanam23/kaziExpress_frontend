@@ -5,6 +5,7 @@ import { ThemeProvider } from "./theme-provider";
 import { QueryProvider } from "./query-provider";
 import { SocketProvider } from "./socket-provider";
 import { Toaster } from "sonner";
+import { PointerEventsGuard } from "@/components/shared/pointer-events-guard";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -13,6 +14,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         <SocketProvider>
           {children}
         </SocketProvider>
+        <PointerEventsGuard />
         <Toaster
           position="top-right"
           toastOptions={{
