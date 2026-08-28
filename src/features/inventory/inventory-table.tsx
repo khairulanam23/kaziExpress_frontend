@@ -5,6 +5,7 @@ import { ProductThumb } from "@/components/shared/initials-avatar";
 import { ProductStockBadge } from "@/components/shared/status-badges";
 import { ProductRowActions } from "./product-row-actions";
 import { EmptyState } from "@/components/shared/states";
+import { productCategoryName } from "./product-meta";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import type { Product } from "@/types";
 import { PackageSearch } from "lucide-react";
@@ -47,7 +48,9 @@ export function InventoryTable({
       </TableHeader>
       <TableBody>
         {products.map((p) => {
-          const category = (p.customFields?.category as string) ?? "Uncategorized";
+          // Same source as the card, so a product cannot show one category
+          // here and a different one in the grid.
+          const category = productCategoryName(p) ?? "Uncategorised";
           const threshold = p.lowStockThreshold ? Number(p.lowStockThreshold) : null;
           return (
             <TableRow key={p.id} className="cursor-pointer" onClick={() => onView(p)}>

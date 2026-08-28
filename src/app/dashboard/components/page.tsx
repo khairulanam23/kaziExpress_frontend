@@ -2,19 +2,19 @@
 
 import * as React from "react";
 import { toast } from "sonner";
+import { PackageSearch, SearchX } from "lucide-react";
 
 import { SectionHeader } from "@/components/shared/chart-card";
 import { PermissionGate } from "@/components/shared/permission-gate";
 import { PERMISSIONS } from "@/constants/permissions";
 import { Card } from "@/components/ui/card";
 import { Pagination } from "@/components/shared/pagination";
-import { ConfirmDialog } from "@/components/shared/states";
-import { Skeleton } from "@/components/ui/skeleton";
+import { ConfirmDialog, EmptyState, ErrorState, TableSkeleton } from "@/components/shared/states";
 
 import { useProducts, useDeleteProduct, useLowStockProducts } from "@/hooks/queries/use-products";
 import { InventoryToolbar } from "@/features/inventory/inventory-toolbar";
 import { InventoryTable } from "@/features/inventory/inventory-table";
-import { InventoryGrid } from "@/features/inventory/inventory-grid";
+import { InventoryGrid, InventoryGridSkeleton } from "@/features/inventory/inventory-grid";
 import { LowStockBanner } from "@/features/inventory/low-stock-banner";
 import { ProductFormDialog } from "@/features/inventory/product-form-dialog";
 import { ProductDetailsDrawer } from "@/features/inventory/product-details-drawer";
@@ -22,14 +22,21 @@ import { AddStockDialog, AdjustStockDialog } from "@/features/inventory/stock-di
 import { getApiErrorMessage } from "@/lib/api-client";
 import type { Product } from "@/types";
 
-const PAGE_SIZE = 8;
+const PAGE_SIZE = 12;
 
+/**
+ * Components catalogue.
+ *
+ * Browsing defaults to the card grid, with the table kept as an alternate view
+ * for anyone who wants the density. Both render the same fetched page — the
+ * switch is presentation only and never triggers another request.
+ */
 export default function ComponentsPage() {
   const [search, setSearch] = React.useState("");
   const [category, setCategory] = React.useState("all");
   const [lowStockOnly, setLowStockOnly] = React.useState(false);
-  const [view, setView] = React.useState<"list" | "grid">("list");
-  
+  const [view, setView] = React.useState<"list" | "grid">("grid");
+
   const [page, setPage] = React.useState(1);
 
   const [viewingProduct, setViewingProduct] = React.useState<Product | null>(null);
@@ -37,8 +44,10 @@ export default function ComponentsPage() {
   const [deletingProduct, setDeletingProduct] = React.useState<Product | null>(null);
   const [editOpen, setEditOpen] = React.useState(false);
 
+  const hasFilters = search.trim().length > 0 || category !== "all" || lowStockOnly;
+
   // Fetch Normal Products (Simple)
-  const { data, isLoading } = useProducts({
+  const { data, isLoading, isError, error, refetch } = useProducts({
     search: search || undefined,
     category: category === "all" ? undefined : category,
     lowStock: lowStockOnly || undefined,
@@ -68,6 +77,13 @@ export default function ComponentsPage() {
     });
   };
 
+  const clearFilters = () => {
+    setSearch("");
+    setCategory("all");
+    setLowStockOnly(false);
+    setPage(1);
+  };
+
   return (
     <div className="flex flex-col gap-6">
       <SectionHeader
@@ -88,10 +104,10 @@ export default function ComponentsPage() {
         }
       />
 
-      <LowStockBanner count={lowStockList?.filter(p => !p.isComposite).length ?? 0} />
+      <LowStockBanner count={lowStockList?.filter((p) => !p.isComposite).length ?? 0} />
 
-      <Card className="gap-4 py-6 flex flex-col">
-        <div className="px-6 pb-2">
+      <Card className="flex flex-col gap-4 py-6">
+        <div className="px-4 pb-1 sm:px-6">
           <InventoryToolbar
             search={search}
             onSearchChange={(v) => {
@@ -110,32 +126,85 @@ export default function ComponentsPage() {
             }}
             view={view}
             onViewChange={setView}
+            resultCount={data?.totalData}
           />
         </div>
 
         {isLoading ? (
-          <div className="grid grid-cols-1 gap-4 px-6 sm:grid-cols-2 lg:grid-cols-4">
-            {Array.from({ length: PAGE_SIZE }).map((_, i) => (
-              <Skeleton key={i} className="h-40 w-full rounded-2xl" />
-            ))}
+          // Skeletons mirror whichever view will render, so nothing jumps.
+          <div className={view === "grid" ? "px-4 sm:px-6" : ""}>
+            {view === "grid" ? <InventoryGridSkeleton count={PAGE_SIZE} /> : <TableSkeleton rows={8} />}
+          </div>
+        ) : isError ? (
+          <div className="px-4 sm:px-6">
+            <ErrorState error={error} onRetry={refetch} />
+          </div>
+        ) : products.length === 0 ? (
+          <div className="px-4 sm:px-6">
+            {/*
+              A catalogue with nothing in it and a search that found nothing are
+              different problems, and only one of them is solved by adding a
+              product.
+            */}
+            {hasFilters ? (
+              <EmptyState
+                icon={SearchX}
+                title="No components match your search"
+                description="Try a different term, or clear the filters to see the whole catalogue."
+                action={
+                  <button
+                    type="button"
+                    onClick={clearFilters}
+                    className="text-primary text-sm font-medium underline underline-offset-4"
+                  >
+                    Clear search and filters
+                  </button>
+                }
+              />
+            ) : (
+              <EmptyState
+                icon={PackageSearch}
+                title="No components yet"
+                description="Raw materials, components and standalone items you add will appear here as a browsable catalogue."
+                action={
+                  <PermissionGate permission={PERMISSIONS.PRODUCT_CREATE}>
+                    <ProductFormDialog defaultIsComposite={false} />
+                  </PermissionGate>
+                }
+              />
+            )}
           </div>
         ) : (
-          <div className={view === "list" ? "" : "px-6"}>
-            {view === "list" ? (
-              <InventoryTable products={products} onView={setViewingProduct} onEdit={handleEdit} onDelete={setDeletingProduct} />
+          <div className={view === "grid" ? "px-4 sm:px-6" : ""}>
+            {view === "grid" ? (
+              <InventoryGrid
+                products={products}
+                onView={setViewingProduct}
+                onEdit={handleEdit}
+                onDelete={setDeletingProduct}
+              />
             ) : (
-              <InventoryGrid products={products} onView={setViewingProduct} onEdit={handleEdit} onDelete={setDeletingProduct} />
+              <div className="overflow-x-auto">
+                <InventoryTable
+                  products={products}
+                  onView={setViewingProduct}
+                  onEdit={handleEdit}
+                  onDelete={setDeletingProduct}
+                />
+              </div>
             )}
           </div>
         )}
 
-        <Pagination
-          page={page}
-          pageCount={data?.totalPages ?? 1}
-          onPageChange={setPage}
-          totalItems={data?.totalData ?? 0}
-          pageSize={PAGE_SIZE}
-        />
+        {!isError && products.length > 0 && (
+          <Pagination
+            page={page}
+            pageCount={data?.totalPages ?? 1}
+            onPageChange={setPage}
+            totalItems={data?.totalData ?? 0}
+            pageSize={PAGE_SIZE}
+          />
+        )}
       </Card>
 
       <ProductDetailsDrawer

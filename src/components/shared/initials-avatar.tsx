@@ -86,6 +86,61 @@ export function ProductThumb({
 }
 
 /**
+ * Large product media for a catalogue card.
+ *
+ * Shares the hash, gradient and initials helpers with `ProductThumb`, so a
+ * product looks the same in a card as it does in a table row. The container
+ * owns the aspect ratio and the image is cover-fitted inside it, so wildly
+ * different source dimensions can never knock a grid of cards out of
+ * alignment.
+ */
+export function ProductMedia({
+  name,
+  imageUrl,
+  className,
+  aspect = "aspect-[4/3]",
+}: {
+  name: string;
+  imageUrl?: string | null;
+  className?: string;
+  aspect?: string;
+}) {
+  const [imgError, setImgError] = React.useState(false);
+  const gradient = GRADIENTS[hashString(name) % GRADIENTS.length];
+  const showImage = !!imageUrl && !imgError;
+
+  return (
+    <div className={cn("bg-muted relative w-full overflow-hidden", aspect, className)}>
+      {showImage ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={imageUrl}
+          alt={name}
+          loading="lazy"
+          onError={() => setImgError(true)}
+          className="size-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+        />
+      ) : (
+        // Most inventory has no photograph, so the fallback sits on a neutral
+        // ground with the gradient contained to a tile. Filling the whole frame
+        // with saturated colour turned a page of cards into a wall of swatches
+        // and buried the information underneath it.
+        <div className="flex size-full items-center justify-center" aria-hidden>
+          <div
+            className={cn(
+              "flex size-14 items-center justify-center rounded-xl bg-linear-to-br shadow-sm",
+              gradient,
+            )}
+          >
+            <span className="text-sm font-semibold tracking-wide text-white">{initials(name)}</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
  * Round avatar that shows a real profile photo when one exists and falls back
  * to deterministic gradient initials otherwise, so a list of people always
  * reads as faces rather than empty circles.
