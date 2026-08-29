@@ -22,7 +22,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { percent } from "@/lib/calc";
 import { formatCurrency, formatNumber, formatPercent } from "@/lib/utils";
-import type { AdminDashboardOverview } from "@/types";
+import type { AdminDashboardOverview, ProfitReport } from "@/types";
 
 /** Fixed categorical order — slots are assigned, never cycled. */
 export const SERIES_COLORS = [
@@ -39,6 +39,17 @@ export const AXIS_PROPS = {
   tickLine: false,
   axisLine: false,
 } as const;
+
+/** `2026-08` → `Aug 2026`, so an axis tick reads as a month rather than a key. */
+function monthLabel(key: string): string {
+  const [year, month] = key.split("-").map(Number);
+  if (!year || !month) return key;
+  return new Date(Date.UTC(year, month - 1, 1)).toLocaleDateString("en-GB", {
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+}
 
 interface TooltipEntry {
   name?: string;
@@ -294,3 +305,122 @@ export function PayrollProgressChart({
 }
 
 export { Legend };
+
+/**
+ * Where revenue went, month by month.
+ *
+ * Revenue is not plotted as its own series: it *is* the bar. Cost of goods and
+ * gross profit stack to it, so the height reads as revenue and the split reads
+ * as margin — one scale, no second axis, and no third series repeating a total
+ * the eye can already see.
+ *
+ * A loss month draws its profit segment below the baseline rather than being
+ * clamped to zero, because a month that lost money should not look like a month
+ * that merely earned nothing.
+ */
+export function RevenueBreakdownChart({
+  byMonth,
+  isLoading,
+  className,
+}: {
+  byMonth?: ProfitReport["byMonth"];
+  isLoading?: boolean;
+  className?: string;
+}) {
+  const data = React.useMemo(
+    () =>
+      (byMonth ?? []).map((m) => ({
+        name: monthLabel(m.month),
+        cogs: m.cogs,
+        grossProfit: m.grossProfit,
+        revenue: m.revenue,
+        marginPercent: m.marginPercent,
+      })),
+    [byMonth],
+  );
+
+  return (
+    <ChartCard
+      title="Revenue and gross profit"
+      description="Each bar is that month's revenue, split into what the goods cost and what was earned"
+      className={className}
+    >
+      {isLoading && !byMonth ? (
+        <Skeleton className="h-64 w-full rounded-xl" />
+      ) : data.length === 0 ? (
+        <EmptyState title="No sales in this period" description="Record a sale from Finished goods and it will appear here." />
+      ) : (
+        <>
+          <div className="h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={data} margin={{ top: 8, right: 8, left: -12, bottom: 0 }} barCategoryGap="26%">
+                <XAxis dataKey="name" {...AXIS_PROPS} interval="preserveStartEnd" />
+                <YAxis {...AXIS_PROPS} tickFormatter={(v: number) => formatCurrency(v, true)} width={64} />
+                <Tooltip
+                  content={<ChartTooltip formatter={(v: number) => formatCurrency(v)} />}
+                  cursor={{ fill: "var(--muted)", opacity: 0.4 }}
+                />
+                <Legend
+                  verticalAlign="bottom"
+                  height={28}
+                  iconType="circle"
+                  iconSize={8}
+                  wrapperStyle={{ fontSize: 12, color: "var(--muted-foreground)" }}
+                />
+                {/* The card colour is drawn between the segments, so the stack
+                    reads as two parts rather than one gradient. */}
+                <Bar
+                  dataKey="cogs"
+                  name="Cost of goods"
+                  stackId="revenue"
+                  fill={SERIES_COLORS[2]}
+                  stroke="var(--card)"
+                  strokeWidth={2}
+                  maxBarSize={52}
+                />
+                <Bar
+                  dataKey="grossProfit"
+                  name="Gross profit"
+                  stackId="revenue"
+                  fill={SERIES_COLORS[0]}
+                  stroke="var(--card)"
+                  strokeWidth={2}
+                  radius={[4, 4, 0, 0]}
+                  maxBarSize={52}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          {/* Table view keeps every value legible regardless of colour perception. */}
+          <details className="mt-3">
+            <summary className="text-muted-foreground hover:text-foreground cursor-pointer text-xs">View as table</summary>
+            <Table className="mt-2">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Month</TableHead>
+                  <TableHead className="text-right">Revenue</TableHead>
+                  <TableHead className="text-right">Cost</TableHead>
+                  <TableHead className="text-right">Gross profit</TableHead>
+                  <TableHead className="text-right">Margin</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {data.map((d) => (
+                  <TableRow key={d.name}>
+                    <TableCell>{d.name}</TableCell>
+                    <TableCell className="tabular text-right">{formatCurrency(d.revenue)}</TableCell>
+                    <TableCell className="tabular text-right">{formatCurrency(d.cogs)}</TableCell>
+                    <TableCell className="tabular text-right">{formatCurrency(d.grossProfit)}</TableCell>
+                    <TableCell className="tabular text-right">
+                      {d.marginPercent === null ? "—" : `${d.marginPercent.toFixed(1)}%`}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </details>
+        </>
+      )}
+    </ChartCard>
+  );
+}

@@ -27,6 +27,7 @@ import { useAdminDashboard } from "@/hooks/queries/use-dashboard";
 import { useProductRequests } from "@/hooks/queries/use-product-requests";
 import { ActivityTimeline } from "./activity-timeline";
 import { AlertsPanel } from "./alerts-panel";
+import { SalesProfitSection } from "./sales-profit-section";
 import { percent } from "@/lib/calc";
 import { formatCurrency, formatNumber, formatPercent, formatQuantity, formatRelativeTime } from "@/lib/utils";
 
@@ -142,6 +143,14 @@ export function AdminDashboard({ userName }: { userName?: string | null }) {
           />
         </div>
       )}
+
+      {/*
+        Sales sit directly under the operational figures and above the production
+        charts: it is what an admin opens this page for, but the alerts strip
+        still comes first because that is the part awaiting a decision.
+        It shares the header's date range, so one control moves the whole page.
+      */}
+      <SalesProfitSection range={validRange} />
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
         <ProductionMixChart production={production} isLoading={isLoading} className="xl:col-span-2" />
