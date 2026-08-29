@@ -307,16 +307,17 @@ export function PayrollProgressChart({
 export { Legend };
 
 /**
- * Where revenue went, month by month.
+ * Revenue against what the goods cost, month by month.
  *
- * Revenue is not plotted as its own series: it *is* the bar. Cost of goods and
- * gross profit stack to it, so the height reads as revenue and the split reads
- * as margin — one scale, no second axis, and no third series repeating a total
- * the eye can already see.
+ * Two bars per month on one scale — no second axis. Gross profit is the gap
+ * between them, and its sign is legible without reading a number: a cost bar
+ * taller than its revenue bar is a month that lost money.
  *
- * A loss month draws its profit segment below the baseline rather than being
- * clamped to zero, because a month that lost money should not look like a month
- * that merely earned nothing.
+ * This started as a stack, revenue split into cost and profit. That reads well
+ * only while profit is positive. A loss means cost *exceeds* revenue, so there
+ * is no total to stack into — Recharts drew nothing at all, and a month that
+ * lost money rendered as an empty slot. Comparing the two directly cannot fail
+ * that way.
  */
 export function RevenueBreakdownChart({
   byMonth,
@@ -341,8 +342,8 @@ export function RevenueBreakdownChart({
 
   return (
     <ChartCard
-      title="Revenue and gross profit"
-      description="Each bar is that month's revenue, split into what the goods cost and what was earned"
+      title="Revenue against cost"
+      description="Two bars per month — the gap between them is the gross profit"
       className={className}
     >
       {isLoading && !byMonth ? (
@@ -353,7 +354,7 @@ export function RevenueBreakdownChart({
         <>
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data} margin={{ top: 8, right: 8, left: -12, bottom: 0 }} barCategoryGap="26%">
+              <BarChart data={data} margin={{ top: 8, right: 8, left: -12, bottom: 0 }} barCategoryGap="28%" barGap={4}>
                 <XAxis dataKey="name" {...AXIS_PROPS} interval="preserveStartEnd" />
                 <YAxis {...AXIS_PROPS} tickFormatter={(v: number) => formatCurrency(v, true)} width={64} />
                 <Tooltip
@@ -367,27 +368,8 @@ export function RevenueBreakdownChart({
                   iconSize={8}
                   wrapperStyle={{ fontSize: 12, color: "var(--muted-foreground)" }}
                 />
-                {/* The card colour is drawn between the segments, so the stack
-                    reads as two parts rather than one gradient. */}
-                <Bar
-                  dataKey="cogs"
-                  name="Cost of goods"
-                  stackId="revenue"
-                  fill={SERIES_COLORS[2]}
-                  stroke="var(--card)"
-                  strokeWidth={2}
-                  maxBarSize={52}
-                />
-                <Bar
-                  dataKey="grossProfit"
-                  name="Gross profit"
-                  stackId="revenue"
-                  fill={SERIES_COLORS[0]}
-                  stroke="var(--card)"
-                  strokeWidth={2}
-                  radius={[4, 4, 0, 0]}
-                  maxBarSize={52}
-                />
+                <Bar dataKey="revenue" name="Revenue" fill={SERIES_COLORS[0]} radius={[4, 4, 0, 0]} maxBarSize={40} />
+                <Bar dataKey="cogs" name="Cost of goods" fill={SERIES_COLORS[2]} radius={[4, 4, 0, 0]} maxBarSize={40} />
               </BarChart>
             </ResponsiveContainer>
           </div>
